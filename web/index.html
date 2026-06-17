@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="yoga_app">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>yoga_app</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <script>
+    window.YogaPoseWeb = (() => {
+      const poseScriptUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js';
+      const poseAssetBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/';
+      let poseScriptPromise;
+
+      function loadPoseScript() {
+        if (window.Pose) {
+          return Promise.resolve();
+        }
+
+        if (!poseScriptPromise) {
+          poseScriptPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = poseScriptUrl;
+            script.crossOrigin = 'anonymous';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('MediaPipe Pose could not be loaded.'));
+            document.head.appendChild(script);
+          });
+        }
+
+        return poseScriptPromise;
+      }
+
+      function createSession(viewType, onLandmarks, onError) {
+        const root = document.createElement('div');
+        const video = document.createElement('video');
+        let stream;
+        let pose;
+        let disposed = false;
+        let analyzing = true;
+        let busy = false;
+
+        root.style.width = '100%';
+        root.style.height = '100%';
+        root.style.background = '#000';
+        root.style.overflow = 'hidden';
+        root.style.display = 'flex';
+        root.style.alignItems = 'center';
+        root.style.justifyContent = 'center';
+
+        video.autoplay = true;
+        video.muted = true;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'contain';
+        video.style.transform = 'scaleX(-1)';
+        root.appendChild(video);
+
+        async function start() {
+          try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+              throw new Error('This browser does not support webcam access.');
+            }
+
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video: {
+                facingMode: 'user',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            });
+
+            video.srcObject = stream;
+            await video.play();
+
+            await loadPoseScript();
+            pose = new window.Pose({
+              locateFile: (file) => `${poseAssetBase}${file}`
+            });
+            pose.setOptions({
+              modelComplexity: 1,
+              smoothLandmarks: true,
+              enableSegmentation: false,
+              minDetectionConfidence: 0.5,
+              minTrackingConfidence: 0.5
+            });
+            pose.onResults((results) => {
+              if (disposed || !results.poseLandmarks) {
+                return;
+              }
+
+              const mirrored = results.poseLandmarks.map((point) => ({
+                x: 1 - point.x,
+                y: point.y,
+                z: point.z,
+                visibility: point.visibility ?? 1
+              }));
+              onLandmarks(JSON.stringify(mirrored));
+            });
+
+            requestAnimationFrame(loop);
+          } catch (error) {
+            onError(error && error.message ? error.message : String(error));
+          }
+        }
+
+        async function loop() {
+          if (disposed) {
+            return;
+          }
+
+          if (analyzing && pose && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !busy) {
+            busy = true;
+            try {
+              await pose.send({ image: video });
+            } catch (error) {
+              onError(error && error.message ? error.message : String(error));
+            } finally {
+              busy = false;
+            }
+          }
+
+          requestAnimationFrame(loop);
+        }
+
+        start();
+
+        return {
+          element: root,
+          setAnalyzing(enabled) {
+            analyzing = enabled;
+          },
+          dispose() {
+            disposed = true;
+            if (pose && pose.close) {
+              pose.close();
+            }
+            if (stream) {
+              stream.getTracks().forEach((track) => track.stop());
+            }
+            video.srcObject = null;
+          }
+        };
+      }
+
+      return { createSession };
+    })();
+  </script>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

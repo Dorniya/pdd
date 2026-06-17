@@ -1,0 +1,68 @@
+name: Web Application Test Automation CI/CD
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Setup Flutter SDK
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        flutter-version: '3.24.0' # Matches stable environment
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20' # LTS version
+
+    - name: Install Application Dependencies
+      run: |
+        flutter pub get
+
+    - name: Build Flutter Web Application
+      run: |
+        flutter build web --release
+
+    - name: Start Web Server
+      run: |
+        npm install -g serve
+        serve -s build/web -l 8080 &
+        echo "Web server started on port 8080."
+        sleep 5 # Wait for server to boot
+
+    - name: Install Automation Dependencies
+      run: |
+        cd automation
+        npm ci
+
+    - name: Run Selenium Test Suite
+      run: |
+        node automation/run.js
+      env:
+        CI: true
+
+    - name: Upload Test Reports Artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: E2E-Automation-Reports
+        path: |
+          automation/reports/E2E_Test_Report.xlsx
+          automation/reports/Test_Summary.html
+          automation/screenshots/

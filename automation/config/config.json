@@ -1,0 +1,10 @@
+{
+  "baseUrl": "http://localhost:8080",
+  "browser": "chrome",
+  "headless": true,
+  "defaultTimeout": 30000,
+  "screenshotDir": "automation/screenshots",
+  "reportDir": "automation/reports",
+  "excelReportPath": "automation/reports/E2E_Test_Report.xlsx",
+  "htmlReportPath": "automation/reports/Test_Summary.html"
+}
