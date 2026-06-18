@@ -1,0 +1,1291 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Automation Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --green: #10b981;
+      --red: #f43f5e;
+      --blue: #3b82f6;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+    
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #10b981, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .meta-info {
+      text-align: right;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    
+    .stat-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .stat-value {
+      font-size: 2.25rem;
+      font-weight: 700;
+    }
+    
+    .stat-card.passed .stat-value { color: var(--green); }
+    .stat-card.failed .stat-value { color: var(--red); }
+    .stat-card.rate .stat-value {
+      background: linear-gradient(to right, var(--green), #6ee7b7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .filter-buttons {
+      display: flex;
+      gap: 0.75rem;
+    }
+    
+    .filter-btn {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .filter-btn:hover {
+      background-color: #334155;
+    }
+    
+    .filter-btn.active {
+      background-color: var(--blue);
+      border-color: var(--blue);
+    }
+    
+    .search-input {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      width: 280px;
+      outline: none;
+    }
+    
+    .search-input:focus {
+      border-color: var(--blue);
+    }
+    
+    .table-container {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    
+    th {
+      background-color: #0f172a;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    
+    td {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    
+    .test-row {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    
+    .test-row:hover {
+      background-color: #334155;
+    }
+    
+    .description-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .type-badge {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background-color: #0f172a;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      align-self: flex-start;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .status-pass {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--green);
+    }
+    
+    .status-fail {
+      background-color: rgba(244, 63, 94, 0.15);
+      color: var(--red);
+    }
+    
+    .time-cell {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    .details-row {
+      background-color: #0b0f19;
+    }
+    
+    .error-details-box {
+      padding: 1.5rem;
+      border-left: 4px solid var(--red);
+      background-color: rgba(244, 63, 94, 0.02);
+      border-radius: 0 8px 8px 0;
+      margin: 0.5rem 0;
+    }
+    
+    .error-details-box strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    pre {
+      background-color: #0f172a;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.875rem;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-bottom: 1.25rem;
+    }
+    
+    .screenshot-preview img {
+      max-width: 100%;
+      max-height: 360px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+      transition: transform 0.2s;
+    }
+    
+    .screenshot-preview img:hover {
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Yoga App Test Automation Dashboard</h1>
+      <p style="color: var(--text-muted); margin-top: 0.25rem;">Automated Selenium E2E Diagnostics</p>
+    </div>
+    <div class="meta-info">
+      <div>Execution Date: <strong>18/6/2026, 4:36:52 pm</strong></div>
+      <div style="margin-top: 0.25rem;">Duration: <strong>156.07s</strong></div>
+    </div>
+  </div>
+
+  <div class="stats-container">
+    <div class="stat-card">
+      <div class="stat-label">Total Tests</div>
+      <div class="stat-value">66</div>
+    </div>
+    <div class="stat-card passed">
+      <div class="stat-label">Passed</div>
+      <div class="stat-value">62</div>
+    </div>
+    <div class="stat-card failed">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value">4</div>
+    </div>
+    <div class="stat-card rate">
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value">93.9%</div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-buttons">
+      <button class="filter-btn active" onclick="filterTests('all', this)">All Tests</button>
+      <button class="filter-btn" onclick="filterTests('pass', this)">Passed</button>
+      <button class="filter-btn" onclick="filterTests('fail', this)">Failed</button>
+    </div>
+    <input type="text" class="search-input" placeholder="Search module, feature, desc..." oninput="searchTests(this.value)">
+  </div>
+
+  <div class="table-container">
+    <table id="test-table">
+      <thead>
+        <tr>
+          <th style="width: 120px;">ID</th>
+          <th style="width: 140px;">Module</th>
+          <th style="width: 160px;">Feature</th>
+          <th>Description</th>
+          <th style="width: 120px;">Status</th>
+          <th style="width: 120px;">Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+      <tr class="test-row pass " onclick="toggleDetails(0)">
+        <td>TC-E2E-01</td>
+        <td>E2E</td>
+        <td>Auth_Journey</td>
+        <td class="description-cell">
+          <strong>Complete registration and validation flow</strong>
+          <span class="type-badge">E2E</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">9926 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(1)">
+        <td>TC-E2E-02</td>
+        <td>E2E</td>
+        <td>Login_Journey</td>
+        <td class="description-cell">
+          <strong>Verify login, dashboard stats, and sign out</strong>
+          <span class="type-badge">E2E</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2963 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(2)">
+        <td>TC-FUN-01</td>
+        <td>Functional</td>
+        <td>Navigation_Flow</td>
+        <td class="description-cell">
+          <strong>Verify transition between Login and Signup screens</strong>
+          <span class="type-badge">Functional</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">3148 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row fail has-error" onclick="toggleDetails(3)">
+        <td>&quot;after all&quot; hook for &quot;TC-FUN-20</td>
+        <td>Functional</td>
+        <td>Settings_Navigation</td>
+        <td class="description-cell">
+          <strong>Route to Send Feedback form screen</strong>
+          <span class="type-badge">Functional&quot;</span>
+        </td>
+        <td><span class="status-badge status-fail">Fail</span></td>
+        <td class="time-cell">10022 ms</td>
+      </tr>
+      
+      <tr id="details-3" class="details-row" style="display: none;">
+        <td colspan="6">
+          <div class="error-details-box">
+           <strong>Error Message:</strong>
+           <pre>TimeoutError: Timeout waiting for semantic element with label: &quot;Profile&quot; and role: &quot;button&quot;
+Wait timed out after 10020ms
+    at C:\Users\HP\yoga_app\selenium\node_modules\selenium-webdriver\lib\webdriver.js:929:22
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)</pre>
+           <strong>Browser Logs:</strong><pre>No browser console logs captured.</pre>
+           
+         </div>
+        </td>
+      </tr>
+    
+      <tr class="test-row pass " onclick="toggleDetails(4)">
+        <td>TC-VAL-01</td>
+        <td>Validation</td>
+        <td>Login_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger empty email and password login validation</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2074 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(5)">
+        <td>TC-VAL-02</td>
+        <td>Validation</td>
+        <td>Login_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger missing password login validation</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2038 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(6)">
+        <td>TC-VAL-03</td>
+        <td>Validation</td>
+        <td>Login_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger missing email login validation</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2012 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(7)">
+        <td>TC-VAL-04</td>
+        <td>Validation</td>
+        <td>Login_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger invalid email format validation on login</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">7154 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(8)">
+        <td>TC-VAL-05</td>
+        <td>Validation</td>
+        <td>Signup_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger empty email and password registration validation</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">5704 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(9)">
+        <td>TC-VAL-06</td>
+        <td>Validation</td>
+        <td>Signup_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger weak password registration validation</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">4680 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row fail has-error" onclick="toggleDetails(10)">
+        <td>TC-VAL-07</td>
+        <td>Validation</td>
+        <td>Signup_Fields</td>
+        <td class="description-cell">
+          <strong>Trigger registration with invalid email format</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-fail">Fail</span></td>
+        <td class="time-cell">18910 ms</td>
+      </tr>
+      
+      <tr id="details-10" class="details-row" style="display: none;">
+        <td colspan="6">
+          <div class="error-details-box">
+           <strong>Error Message:</strong>
+           <pre>AssertionError: expected false to be true
+    at Context.&lt;anonymous&gt; (tests\validation\validation.test.js:80:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)</pre>
+           <strong>Browser Logs:</strong><pre>No browser console logs captured.</pre>
+           
+         </div>
+        </td>
+      </tr>
+    
+      <tr class="test-row fail has-error" onclick="toggleDetails(11)">
+        <td>TC-VAL-08</td>
+        <td>Validation</td>
+        <td>Signup_Fields</td>
+        <td class="description-cell">
+          <strong>Verify signup form mismatch password field verification</strong>
+          <span class="type-badge">Validation</span>
+        </td>
+        <td><span class="status-badge status-fail">Fail</span></td>
+        <td class="time-cell">10010 ms</td>
+      </tr>
+      
+      <tr id="details-11" class="details-row" style="display: none;">
+        <td colspan="6">
+          <div class="error-details-box">
+           <strong>Error Message:</strong>
+           <pre>TimeoutError: Timeout waiting for semantic element with label: &quot;Create New Account&quot; and role: &quot;button&quot;
+Wait timed out after 10010ms
+    at C:\Users\HP\yoga_app\selenium\node_modules\selenium-webdriver\lib\webdriver.js:929:22
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)</pre>
+           <strong>Browser Logs:</strong><pre>No browser console logs captured.</pre>
+           
+         </div>
+        </td>
+      </tr>
+    
+      <tr class="test-row pass " onclick="toggleDetails(12)">
+        <td>TC-UI-01</td>
+        <td>UI/UX</td>
+        <td>Login_Branding</td>
+        <td class="description-cell">
+          <strong>Verify presence of self_improvement branding icon</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">13 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(13)">
+        <td>TC-UI-02</td>
+        <td>UI/UX</td>
+        <td>Login_Header</td>
+        <td class="description-cell">
+          <strong>Verify typography and wording of Login main title</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">11 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(14)">
+        <td>TC-UI-03</td>
+        <td>UI/UX</td>
+        <td>Login_Fields</td>
+        <td class="description-cell">
+          <strong>Verify Email text input placeholder label</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">15 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(15)">
+        <td>TC-UI-04</td>
+        <td>UI/UX</td>
+        <td>Login_Fields</td>
+        <td class="description-cell">
+          <strong>Verify Password text input placeholder label</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">15 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(16)">
+        <td>TC-UI-05</td>
+        <td>UI/UX</td>
+        <td>Login_Button</td>
+        <td class="description-cell">
+          <strong>Verify presence of primary green Login button</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">14 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(17)">
+        <td>TC-UI-06</td>
+        <td>UI/UX</td>
+        <td>Signup_Layout</td>
+        <td class="description-cell">
+          <strong>Verify routing to Signup and title text presence</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2545 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(18)">
+        <td>TC-UI-07</td>
+        <td>UI/UX</td>
+        <td>Signup_Fields</td>
+        <td class="description-cell">
+          <strong>Verify presence of Sign Up action button</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2489 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(19)">
+        <td>TC-UI-08</td>
+        <td>UI/UX</td>
+        <td>Signup_Navigation</td>
+        <td class="description-cell">
+          <strong>Verify presence of Back to Login redirect button</strong>
+          <span class="type-badge">UI/UX</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2403 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row fail has-error" onclick="toggleDetails(20)">
+        <td>&quot;after all&quot; hook for &quot;TC-UI-15</td>
+        <td>UI/UX</td>
+        <td>Dashboard_Layout</td>
+        <td class="description-cell">
+          <strong>Verify Timer quick action visual element presence</strong>
+          <span class="type-badge">UI/UX&quot;</span>
+        </td>
+        <td><span class="status-badge status-fail">Fail</span></td>
+        <td class="time-cell">10136 ms</td>
+      </tr>
+      
+      <tr id="details-20" class="details-row" style="display: none;">
+        <td colspan="6">
+          <div class="error-details-box">
+           <strong>Error Message:</strong>
+           <pre>TimeoutError: Timeout waiting for semantic element with label: &quot;Profile&quot; and role: &quot;button&quot;
+Wait timed out after 10134ms
+    at C:\Users\HP\yoga_app\selenium\node_modules\selenium-webdriver\lib\webdriver.js:929:22
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)</pre>
+           <strong>Browser Logs:</strong><pre>No browser console logs captured.</pre>
+           
+         </div>
+        </td>
+      </tr>
+    
+      <tr class="test-row pass " onclick="toggleDetails(21)">
+        <td>TC-SEC-01</td>
+        <td>Security</td>
+        <td>Credentials_Scan</td>
+        <td class="description-cell">
+          <strong>Verify no hardcoded credentials or API keys in configuration files</strong>
+          <span class="type-badge">Security</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">6 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(22)">
+        <td>TC-SEC-02</td>
+        <td>Security</td>
+        <td>Encryption_Protocols</td>
+        <td class="description-cell">
+          <strong>Check configuration target URLs use secure protocol configurations</strong>
+          <span class="type-badge">Security</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">18 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(23)">
+        <td>TC-SEC-03</td>
+        <td>Security</td>
+        <td>Dependency_Audit</td>
+        <td class="description-cell">
+          <strong>Programmatically run npm audit to detect critical security advisories</strong>
+          <span class="type-badge">Security</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">3098 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(24)">
+        <td>TC-SEC-04</td>
+        <td>Security</td>
+        <td>Ignore_Files</td>
+        <td class="description-cell">
+          <strong>Verify git ignores database cache folders and node_modules</strong>
+          <span class="type-badge">Security</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(25)">
+        <td>TC-SEC-05</td>
+        <td>Security</td>
+        <td>HTML_Security</td>
+        <td class="description-cell">
+          <strong>Check for Content Security Policy meta headers presence in web folder</strong>
+          <span class="type-badge">Security</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(26)">
+        <td>TC-UNI-01</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for empty histories</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(27)">
+        <td>TC-UNI-02</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for active consecutive days</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(28)">
+        <td>TC-UNI-03</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak where newest session is broken</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(29)">
+        <td>TC-UNI-04</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak with duplicated dates in same day</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(30)">
+        <td>TC-UNI-05</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for single today session</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(31)">
+        <td>TC-UNI-06</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for single yesterday session</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(32)">
+        <td>TC-UNI-07</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for out-of-order date strings</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(33)">
+        <td>TC-UNI-08</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak with gap of two days</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(34)">
+        <td>TC-UNI-09</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak with multiple gaps</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(35)">
+        <td>TC-UNI-10</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for extremely long histories</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(36)">
+        <td>TC-UNI-11</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak for future date strings</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(37)">
+        <td>TC-UNI-12</td>
+        <td>Unit</td>
+        <td>Streak_Calculation</td>
+        <td class="description-cell">
+          <strong>Calculate streak with non-ISO string parsing</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(38)">
+        <td>TC-UNI-13</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Handle averaging for empty session arrays</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(39)">
+        <td>TC-UNI-14</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Correctly average multiple integers</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(40)">
+        <td>TC-UNI-15</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Correctly average when total accuracy is zero</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(41)">
+        <td>TC-UNI-16</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Correctly average single accuracy value</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(42)">
+        <td>TC-UNI-17</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Correctly handle decimal rounding up</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(43)">
+        <td>TC-UNI-18</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Correctly handle decimal rounding down</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(44)">
+        <td>TC-UNI-19</td>
+        <td>Unit</td>
+        <td>Accuracy_Averaging</td>
+        <td class="description-cell">
+          <strong>Correctly handle out-of-bounds metrics inputs</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(45)">
+        <td>TC-UNI-20</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats seconds under one minute</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(46)">
+        <td>TC-UNI-21</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats seconds over one minute but under one hour</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(47)">
+        <td>TC-UNI-22</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats seconds exceeding one hour</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(48)">
+        <td>TC-UNI-23</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats negative duration values</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(49)">
+        <td>TC-UNI-24</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats extremely large duration numbers</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(50)">
+        <td>TC-UNI-25</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats single digit seconds</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(51)">
+        <td>TC-UNI-26</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats null/undefined inputs</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(52)">
+        <td>TC-UNI-27</td>
+        <td>Unit</td>
+        <td>Duration_Formatting</td>
+        <td class="description-cell">
+          <strong>Formats exact 10 minutes</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(53)">
+        <td>TC-UNI-28</td>
+        <td>Unit</td>
+        <td>BMI_Calculation</td>
+        <td class="description-cell">
+          <strong>Verify standard normal height and weight</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(54)">
+        <td>TC-UNI-29</td>
+        <td>Unit</td>
+        <td>BMI_Calculation</td>
+        <td class="description-cell">
+          <strong>Verify zero/negative weight height bounds</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(55)">
+        <td>TC-UNI-30</td>
+        <td>Unit</td>
+        <td>BMI_Calculation</td>
+        <td class="description-cell">
+          <strong>Verify high obesity values</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(56)">
+        <td>TC-UNI-31</td>
+        <td>Unit</td>
+        <td>BMI_Calculation</td>
+        <td class="description-cell">
+          <strong>Verify extremely low underweight values</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(57)">
+        <td>TC-UNI-32</td>
+        <td>Unit</td>
+        <td>BMI_Classification</td>
+        <td class="description-cell">
+          <strong>Classify underweight and normal weight BMI</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(58)">
+        <td>TC-UNI-33</td>
+        <td>Unit</td>
+        <td>BMI_Classification</td>
+        <td class="description-cell">
+          <strong>Classify overweight and obese BMI</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(59)">
+        <td>TC-UNI-34</td>
+        <td>Unit</td>
+        <td>BMI_Classification</td>
+        <td class="description-cell">
+          <strong>Classify negative and zero BMI</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(60)">
+        <td>TC-UNI-35</td>
+        <td>Unit</td>
+        <td>BP_Classification</td>
+        <td class="description-cell">
+          <strong>Classify normal and elevated blood pressures</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(61)">
+        <td>TC-UNI-36</td>
+        <td>Unit</td>
+        <td>BP_Classification</td>
+        <td class="description-cell">
+          <strong>Classify stage 1 and stage 2 hypertensive levels</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(62)">
+        <td>TC-UNI-37</td>
+        <td>Unit</td>
+        <td>BP_Classification</td>
+        <td class="description-cell">
+          <strong>Classify hypertensive crisis and invalid levels</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(63)">
+        <td>TC-UNI-38</td>
+        <td>Unit</td>
+        <td>Calorie_Burn</td>
+        <td class="description-cell">
+          <strong>Verify normal burn at low intensity</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">2 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(64)">
+        <td>TC-UNI-39</td>
+        <td>Unit</td>
+        <td>Calorie_Burn</td>
+        <td class="description-cell">
+          <strong>Verify normal burn at high intensity</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">0 ms</td>
+      </tr>
+      
+    
+      <tr class="test-row pass " onclick="toggleDetails(65)">
+        <td>TC-UNI-40</td>
+        <td>Unit</td>
+        <td>Calorie_Burn</td>
+        <td class="description-cell">
+          <strong>Verify invalid inputs returns zero burn</strong>
+          <span class="type-badge">Unit</span>
+        </td>
+        <td><span class="status-badge status-pass">Pass</span></td>
+        <td class="time-cell">1 ms</td>
+      </tr>
+      
+    
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    function toggleDetails(index) {
+      const detailsRow = document.getElementById('details-' + index);
+      if (detailsRow) {
+        detailsRow.style.display = detailsRow.style.display === 'none' ? 'table-row' : 'none';
+      }
+    }
+
+    function filterTests(status, button) {
+      // Toggle button active class
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+
+      const rows = document.querySelectorAll('#test-table tbody tr.test-row');
+      rows.forEach((row, index) => {
+        const detailsRow = document.getElementById('details-' + index);
+        
+        if (status === 'all') {
+          row.style.display = 'table-row';
+        } else if (status === 'pass' && row.classList.contains('pass')) {
+          row.style.display = 'table-row';
+        } else if (status === 'fail' && row.classList.contains('fail')) {
+          row.style.display = 'table-row';
+        } else {
+          row.style.display = 'none';
+          if (detailsRow) detailsRow.style.display = 'none';
+        }
+      });
+    }
+
+    function searchTests(query) {
+      const lower = query.toLowerCase();
+      const rows = document.querySelectorAll('#test-table tbody tr.test-row');
+      
+      rows.forEach((row, index) => {
+        const detailsRow = document.getElementById('details-' + index);
+        const text = row.textContent.toLowerCase();
+        
+        if (text.includes(lower)) {
+          row.style.display = 'table-row';
+        } else {
+          row.style.display = 'none';
+          if (detailsRow) detailsRow.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+  

@@ -43,3 +43,18 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Node.js test suites
+node_modules/
+selenium/node_modules/
+appium/node_modules/
+automation/node_modules/
+**/node_modules/
+
+# Test reports and screenshots (generated artifacts)
+selenium/reports/
+appium/reports/
+automation/reports/
+selenium/screenshots/
+appium/screenshots/
+automation/screenshots/

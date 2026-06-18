@@ -1,0 +1,16 @@
+{
+  "name": "yoga-app-selenium",
+  "version": "1.0.0",
+  "description": "Selenium Web E2E Test Suite for Yoga App",
+  "main": "run.js",
+  "scripts": {
+    "test": "node run.js"
+  },
+  "dependencies": {
+    "chai": "^4.3.7",
+    "exceljs": "^4.4.0",
+    "mocha": "^10.2.0",
+    "selenium-webdriver": "^4.15.0",
+    "serve": "^14.2.1"
+  }
+}
