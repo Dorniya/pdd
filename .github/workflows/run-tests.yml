@@ -99,41 +99,24 @@ jobs:
 
         PASSING=$(echo "$OUTPUT" | grep -oP '\d+ passing' | grep -oP '\d+' | tail -1 || echo "0")
         FAILING=$(echo "$OUTPUT" | grep -oP '\d+ failing' | grep -oP '\d+' | tail -1 || echo "0")
-        PENDING=$(echo "$OUTPUT" | grep -oP '\d+ pending' | grep -oP '\d+' | tail -1 || echo "0")
-        TOTAL=$((PASSING + FAILING + PENDING))
 
-        if [ "$FAILING" = "0" ]; then
+        # Ensure values are not empty
+        [ -z "$PASSING" ] && PASSING="0"
+        [ -z "$FAILING" ] && FAILING="0"
+
+        if [ "$FAILING" = "0" ] && [ "$PASSING" != "0" ]; then
           STATUS_ICON="✅"
-          STATUS_TEXT="All tests passed"
+          STATUS_TEXT="All tests passed successfully!"
         else
-          STATUS_ICON="⚠️"
-          STATUS_TEXT="Some tests failed"
+          STATUS_ICON="❌"
+          STATUS_TEXT="Some tests failed."
         fi
 
         cat >> $GITHUB_STEP_SUMMARY << EOF
         # $STATUS_ICON Yoga App – Test Automation Report
 
-        ## Summary
-        | Metric | Count |
-        |--------|-------|
-        | ✅ Passing | **$PASSING** |
-        | ❌ Failing | **$FAILING** |
-        | ⏭️  Pending | **$PENDING** |
-        | 📋 Total   | **$TOTAL** |
-
-        **$STATUS_TEXT** out of $TOTAL registered tests.
-
-        ## Test Categories
-        | Category | Tests |
-        |----------|-------|
-        | 🔬 Unit (Business Logic) | 40 |
-        | 🔬 Unit (Advanced Utilities) | 100 |
-        | 🔄 End-to-End Journeys | 10 |
-        | ⚙️  Functional Flows | 20 |
-        | ✔️  Input Validation | 20 |
-        | 🎨 UI/UX Checks | 15 |
-        | 🔒 Security & Vulnerability | 5 |
-        | **Total Registered** | **210** |
+        ### Status
+        **$STATUS_TEXT** ($PASSING passing, $FAILING failing)
 
         ## Reports
         > 📁 Full reports available in the **E2E-Automation-Reports** artifact below.
