@@ -99,34 +99,49 @@ class BasePage {
    * Inputs text into a semantic text-field.
    */
   async type(ariaLabel, text) {
-    const el = await this.findSemanticElement(ariaLabel, 'text-field');
-    try {
-      // Focus and select all text so we can clear it with a single Backspace keypress
-      await this.driver.executeScript(
-        'arguments[0].focus(); ' +
-        'arguments[0].setSelectionRange(0, arguments[0].value.length);',
-        el
-      );
-      await el.sendKeys(Key.BACK_SPACE);
-    } catch (e) {
-      console.warn(`[BasePage] Custom select-and-delete clear failed: ${e.message}. Falling back to standard clear.`);
+    let retries = 2;
+    while (retries > 0) {
       try {
-        await el.clear();
+        const el = await this.findSemanticElement(ariaLabel, 'text-field');
+        try {
+          await this.driver.executeScript(
+            'arguments[0].focus(); ' +
+            'arguments[0].setSelectionRange(0, arguments[0].value.length);',
+            el
+          );
+          await el.sendKeys(Key.BACK_SPACE);
+        } catch (e) {
+          try {
+            await el.clear();
+          } catch (err) {}
+        }
+        if (text !== '') {
+          await el.sendKeys(text);
+        }
+        return; // Success
       } catch (err) {
-        // Ignore fallback clear errors
+        retries--;
+        if (retries === 0) throw err;
+        console.warn(`[BasePage] Stale/failed element in type("${ariaLabel}"). Retrying...`);
+        await this.sleep(1000);
       }
-    }
-    if (text !== '') {
-      await el.sendKeys(text);
     }
   }
 
-  /**
-   * Clicks a semantic element (button, link, tab).
-   */
   async click(ariaLabel, role = 'button') {
-    const el = await this.findSemanticElement(ariaLabel, role);
-    await el.click();
+    let retries = 2;
+    while (retries > 0) {
+      try {
+        const el = await this.findSemanticElement(ariaLabel, role);
+        await el.click();
+        return; // Success
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err;
+        console.warn(`[BasePage] Stale/failed element in click("${ariaLabel}", "${role}"). Retrying...`);
+        await this.sleep(1000);
+      }
+    }
   }
 
   /**
@@ -208,9 +223,59 @@ class BasePage {
    * 2. Falling back to a hard page reload (with semantics re-enable) if not found
    */
   async ensureOnLoginPage(baseUrl = 'http://localhost:8080') {
-    const onLogin = await this.isTextPresent('Login', 6000);
+    let onLogin = await this.isTextPresent('Login', 2000);
+    if (onLogin) return;
+
+    // Hard navigate to app root. This will redirect to Dashboard if logged in.
+    await this.navigateToApp(baseUrl);
+
+    // Check if we are on Dashboard
+    const onDashboard = await this.isTextPresent('Yoga Dashboard', 3000);
+    if (onDashboard) {
+      console.log('[BasePage] Detected active session on Dashboard. Performing logout to reset state...');
+      try {
+        // Settings tab has a clear Logout button
+        await this.click('Settings', 'button');
+        await this.sleep(1000);
+        await this.click('Logout', 'button');
+        await this.sleep(2000);
+      } catch (e) {
+        console.warn('[BasePage] Settings logout failed: ' + e.message + '. Trying Profile logout...');
+        try {
+          await this.click('Profile', 'button');
+          await this.sleep(1000);
+          await this.click('Logout', 'button');
+          await this.sleep(2000);
+        } catch (err) {
+          console.error('[BasePage] Both logout routes failed. Force clearing storage.');
+          try {
+            await this.driver.executeScript('window.localStorage.clear(); window.sessionStorage.clear();');
+            await this.driver.manage().deleteAllCookies();
+            await this.navigateToApp(baseUrl);
+          } catch (storageErr) {}
+        }
+      }
+    }
+
+    // Verify we are now on login page
+    onLogin = await this.isTextPresent('Login', 5000);
     if (!onLogin) {
-      await this.navigateToApp(baseUrl);
+      console.warn('[BasePage] Failed to reach Login page. Force clearing IndexedDB databases...');
+      try {
+        await this.driver.executeScript(`
+          if (window.indexedDB && window.indexedDB.databases) {
+            window.indexedDB.databases().then(dbs => {
+              dbs.forEach(db => {
+                try { window.indexedDB.deleteDatabase(db.name); } catch(e) {}
+              });
+            });
+          }
+          window.localStorage.clear();
+          window.sessionStorage.clear();
+        `);
+        await this.driver.manage().deleteAllCookies();
+        await this.navigateToApp(baseUrl);
+      } catch (dbErr) {}
     }
   }
 }

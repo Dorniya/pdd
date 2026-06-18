@@ -27,9 +27,26 @@ class DashboardPage extends BasePage {
 
   async navigateToTab(tabName) {
     console.log(`[DashboardPage] Navigating to Bottom Tab: ${tabName}`);
-    // Bottom tabs have labels like "Home", "Yoga", "Profile", "Settings"
-    await this.click(tabName, 'button');
-    await this.sleep(1000);
+    // Bottom tabs can be hidden when on a full-screen sub-page navigator.
+    // Use a 5s per-attempt timeout so 3 attempts finish in ~18s < Mocha 30s limit.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // Use shorter 5s timeout per attempt instead of default 10s
+        const el = await this.findSemanticElement(tabName, 'button', 5000);
+        await el.click();
+        await this.sleep(1000);
+        return; // Success
+      } catch (e) {
+        if (attempt < 2) {
+          console.warn(`[DashboardPage] Tab "${tabName}" not found on attempt ${attempt + 1}. Navigating back to expose tab bar...`);
+          try { await this.goBack(); } catch (be) {}
+          await this.sleep(1000);
+        } else {
+          // Final attempt failed — throw to let caller handle it
+          throw e;
+        }
+      }
+    }
   }
 }
 

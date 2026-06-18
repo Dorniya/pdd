@@ -109,7 +109,7 @@ describe('Validation | Input Field Checking', function() {
   // TC-VAL-09 to TC-VAL-20: Health Details Form Fields (under Settings, requires auth)
   describe('Health Details Form Validations', function() {
     before(async function() {
-      this.timeout(60000); // Long timeout: reload + semantics + login attempt
+      this.timeout(60000); // Long timeout: reload + semantics + registration attempt
       // Hard reset with full semantics re-enable
       await loginPage.navigateToApp();
       // Verify semantics are working — retry once if first reload didn't settle
@@ -118,15 +118,16 @@ describe('Validation | Input Field Checking', function() {
         console.warn('[VAL-Health-before] Semantics not ready after first reload, retrying...');
         await loginPage.navigateToApp();
       }
-      // Login attempt with dummy credentials — skip if auth unavailable
-      await loginPage.login('user@example.com', 'WrongPassword123');
-      const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 2000);
+      // Register a test user dynamically
+      const testEmail = `val_runner_${Date.now()}@example.com`;
+      await loginPage.clickCreateAccount();
+      await signupPage.register(testEmail, 'Password123');
+      const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 5000);
       if (!onDashboard) {
         this.skip();
       } else {
         try {
-          await dashboardPage.navigateToTab('Profile');
-          await profilePage.clickSettings();
+          await dashboardPage.navigateToTab('Settings');
           await settingsPage.navigateToHealthDetails();
         } catch(e) {
           this.skip();

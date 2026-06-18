@@ -3,13 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config/config.json');
 
-/**
- * Generates a styled Excel report from the gathered test results.
- * @param {Array} results Array of objects representing test case details and execution outcomes.
- */
 async function generateExcelReport(results) {
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('E2E Test Report');
+  const sheet = workbook.addWorksheet('Mobile E2E Test Report');
 
   // Set gridlines visible
   sheet.views = [{ showGridLines: true }];
@@ -17,12 +13,12 @@ async function generateExcelReport(results) {
   // 1. Add Title & Metadata Block
   sheet.mergeCells('A1:L1');
   const titleCell = sheet.getCell('A1');
-  titleCell.value = 'End-to-End Test Automation Execution Report';
+  titleCell.value = 'Mobile E2E Test Automation Execution Report';
   titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
   titleCell.fill = {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FF2E7D32' } // Green header
+    fgColor: { argb: 'FF1565C0' } // Blue header
   };
   titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
   sheet.getRow(1).height = 40;
@@ -72,7 +68,7 @@ async function generateExcelReport(results) {
     cell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF1B5E20' } // Dark Green
+      fgColor: { argb: 'FF0D47A1' } // Dark Blue
     };
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
     cell.border = {
@@ -101,7 +97,7 @@ async function generateExcelReport(results) {
       test.date || new Date().toISOString()
     ];
 
-    // Style the status cell (Column H, index 8)
+    // Style the status cell
     const statusCell = row.getCell(8);
     if (test.status === 'Pass') {
       statusCell.fill = {
@@ -144,24 +140,19 @@ async function generateExcelReport(results) {
         }
       }
     });
-    column.width = Math.min(Math.max(maxLen + 4, 12), 40); // bounds: [12, 40]
+    column.width = Math.min(Math.max(maxLen + 4, 12), 40);
   });
 
-  // Ensure report directories exist
-  const reportPath = path.join(__dirname, '..', config.excelReportPath);
-  const rootReportPath = path.join(__dirname, '..', '..', 'reports', 'E2E_Test_Report.xlsx');
-  
-  [reportPath, rootReportPath].forEach(p => {
-    const dir = path.dirname(p);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
+  // Ensure report directory exists
+  const reportPath = path.resolve(__dirname, '..', config.excelReportPath);
+  const dir = path.dirname(reportPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
-  // Write workbook to files
+  // Write workbook to file
   await workbook.xlsx.writeFile(reportPath);
-  await workbook.xlsx.writeFile(rootReportPath);
-  console.log(`[ExcelReporter] Excel reports successfully generated at:\n  - ${reportPath}\n  - ${rootReportPath}`);
+  console.log(`[ExcelReporter] Excel report successfully generated at: ${reportPath}`);
 }
 
 module.exports = {

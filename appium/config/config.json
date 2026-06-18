@@ -1,0 +1,21 @@
+{
+  "appiumHost": "127.0.0.1",
+  "appiumPort": 4723,
+  "appiumPath": "/wd/hub",
+  "capabilities": {
+    "platformName": "Android",
+    "appium:automationName": "UiAutomator2",
+    "appium:app": "c:\\Users\\HP\\yoga_app\\build\\app\\outputs\\flutter-apk\\app-debug.apk",
+    "appium:deviceName": "Android Device",
+    "appium:autoGrantPermissions": true,
+    "appium:newCommandTimeout": 300,
+    "appium:unicodeKeyboard": true,
+    "appium:resetKeyboard": true,
+    "appium:autoAcceptAlerts": true
+  },
+  "defaultTimeout": 45000,
+  "screenshotDir": "screenshots",
+  "reportDir": "reports",
+  "excelReportPath": "reports/Mobile_E2E_Test_Report.xlsx",
+  "htmlReportPath": "reports/Mobile_Test_Summary.html"
+}

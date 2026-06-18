@@ -1,68 +1,181 @@
-name: Web Application Test Automation CI/CD
+name: Yoga App – Selenium Test Automation CI/CD
 
 on:
   push:
     branches: [ main, master, dev ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:          # allow manual trigger from the Actions tab
 
 jobs:
-  test:
+  selenium-tests:
+    name: 🧪 Run Full Test Suite (200+ Tests)
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+    # ─────────────────────────────────────────────
+    # 1. Source & tools
+    # ─────────────────────────────────────────────
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v3
+    - name: ☕ Setup Java 17 (Flutter dependency)
+      uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Setup Flutter SDK
+    - name: 🐦 Setup Flutter SDK
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
-        flutter-version: '3.24.0' # Matches stable environment
+        flutter-version: '3.44.2'
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
+    - name: 🟢 Setup Node.js 20
+      uses: actions/setup-node@v4
       with:
-        node-version: '20' # LTS version
+        node-version: '20'
 
-    - name: Install Application Dependencies
+    # ─────────────────────────────────────────────
+    # 2. Chrome (headless) – pre-installed on ubuntu-latest
+    # ─────────────────────────────────────────────
+    - name: 🌐 Verify Chrome & ChromeDriver
       run: |
-        flutter pub get
+        google-chrome --version
+        chromedriver --version
 
-    - name: Build Flutter Web Application
-      run: |
-        flutter build web --release
+    # ─────────────────────────────────────────────
+    # 3. Build Flutter web app
+    # ─────────────────────────────────────────────
+    - name: 📦 Install Flutter Dependencies
+      run: flutter pub get
 
-    - name: Start Web Server
+    - name: 🏗️  Build Flutter Web (release)
+      run: flutter build web --release
+
+    # ─────────────────────────────────────────────
+    # 4. Serve the app
+    # ─────────────────────────────────────────────
+    - name: 🚀 Start Web Server on :8080
       run: |
         npm install -g serve
         serve -s build/web -l 8080 &
-        echo "Web server started on port 8080."
-        sleep 5 # Wait for server to boot
+        echo "Waiting for server to be ready..."
+        for i in $(seq 1 30); do
+          curl -sf http://localhost:8080 > /dev/null && echo "✅ Server is ready!" && break
+          echo "  attempt $i/30 ..."
+          sleep 2
+        done
 
-    - name: Install Automation Dependencies
+    # ─────────────────────────────────────────────
+    # 5. Install test dependencies
+    # ─────────────────────────────────────────────
+    - name: 📚 Install Selenium Suite Dependencies
       run: |
-        cd automation
-        npm ci
+        cd selenium
+        npm install
 
-    - name: Run Selenium Test Suite
+    # ─────────────────────────────────────────────
+    # 6. Run the full test suite
+    # ─────────────────────────────────────────────
+    - name: 🧪 Execute Full Selenium Test Suite
+      id: run_tests
       run: |
-        node automation/run.js
+        cd selenium
+        node run.js 2>&1 | tee /tmp/test_output.txt
+        echo "EXIT_CODE=${PIPESTATUS[0]}" >> $GITHUB_ENV
       env:
         CI: true
+      continue-on-error: true      # upload reports even on test failures
 
-    - name: Upload Test Reports Artifacts
+    # ─────────────────────────────────────────────
+    # 7. Parse results & write Job Summary
+    # ─────────────────────────────────────────────
+    - name: 📊 Generate GitHub Actions Job Summary
+      if: always()
+      run: |
+        OUTPUT=$(cat /tmp/test_output.txt 2>/dev/null || echo "No output captured")
+
+        PASSING=$(echo "$OUTPUT" | grep -oP '\d+ passing' | grep -oP '\d+' | tail -1 || echo "0")
+        FAILING=$(echo "$OUTPUT" | grep -oP '\d+ failing' | grep -oP '\d+' | tail -1 || echo "0")
+        PENDING=$(echo "$OUTPUT" | grep -oP '\d+ pending' | grep -oP '\d+' | tail -1 || echo "0")
+        TOTAL=$((PASSING + FAILING + PENDING))
+
+        if [ "$FAILING" = "0" ]; then
+          STATUS_ICON="✅"
+          STATUS_TEXT="All tests passed"
+        else
+          STATUS_ICON="⚠️"
+          STATUS_TEXT="Some tests failed"
+        fi
+
+        cat >> $GITHUB_STEP_SUMMARY << EOF
+        # $STATUS_ICON Yoga App – Test Automation Report
+
+        ## Summary
+        | Metric | Count |
+        |--------|-------|
+        | ✅ Passing | **$PASSING** |
+        | ❌ Failing | **$FAILING** |
+        | ⏭️  Pending | **$PENDING** |
+        | 📋 Total   | **$TOTAL** |
+
+        **$STATUS_TEXT** out of $TOTAL registered tests.
+
+        ## Test Categories
+        | Category | Tests |
+        |----------|-------|
+        | 🔬 Unit (Business Logic) | 40 |
+        | 🔬 Unit (Advanced Utilities) | 100 |
+        | 🔄 End-to-End Journeys | 10 |
+        | ⚙️  Functional Flows | 20 |
+        | ✔️  Input Validation | 20 |
+        | 🎨 UI/UX Checks | 15 |
+        | 🔒 Security & Vulnerability | 5 |
+        | **Total Registered** | **210** |
+
+        ## Reports
+        > 📁 Full reports available in the **E2E-Automation-Reports** artifact below.
+        > Download and open \`Test_Summary.html\` for the interactive dashboard.
+        EOF
+
+    # ─────────────────────────────────────────────
+    # 8. Upload all reports & screenshots
+    # ─────────────────────────────────────────────
+    - name: 📤 Upload Test Reports & Screenshots
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: E2E-Automation-Reports
+        retention-days: 30
         path: |
-          automation/reports/E2E_Test_Report.xlsx
-          automation/reports/Test_Summary.html
-          automation/screenshots/
+          selenium/reports/E2E_Test_Report.xlsx
+          selenium/reports/Test_Summary.html
+          reports/E2E_Test_Report.xlsx
+          reports/Test_Summary.html
+          selenium/screenshots/
+
+    # ─────────────────────────────────────────────
+    # 9. Fail the job if tests actually failed
+    # ─────────────────────────────────────────────
+    - name: ✅ Assert Test Results
+      if: always()
+      run: |
+        OUTPUT=$(cat /tmp/test_output.txt 2>/dev/null || echo "")
+        FAILING=$(echo "$OUTPUT" | grep -oP '\d+ failing' | grep -oP '\d+' | tail -1 || echo "0")
+        PASSING=$(echo "$OUTPUT" | grep -oP '\d+ passing' | grep -oP '\d+' | tail -1 || echo "0")
+
+        echo "Passing: $PASSING | Failing: $FAILING"
+
+        if [ "$FAILING" != "0" ] && [ "$FAILING" != "" ]; then
+          echo "❌ $FAILING test(s) failed. Marking workflow as failed."
+          exit 1
+        fi
+
+        if [ "$PASSING" = "0" ]; then
+          echo "❌ No tests passed. Something went wrong."
+          exit 1
+        fi
+
+        echo "✅ Test suite passed with $PASSING tests."

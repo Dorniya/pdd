@@ -118,9 +118,12 @@ describe('UI/UX | Visual Layout & Branding Checks', function() {
   // TC-UI-09 to TC-UI-15: Authenticated Dashboard UI/UX
   describe('Dashboard UI/UX Inspections', function() {
     before(async function() {
-      await loginPage.navigateToApp();
-      await loginPage.login('user@example.com', 'WrongPassword123');
-      const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 1000);
+      await loginPage.ensureOnLoginPage();
+      // Register a test user dynamically
+      const testEmail = `ui_runner_${Date.now()}@example.com`;
+      await loginPage.clickCreateAccount();
+      await signupPage.register(testEmail, 'Password123');
+      const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 5000);
       if (!onDashboard) {
         this.skip();
       }

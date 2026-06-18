@@ -2,16 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config/config.json');
 
-/**
- * Compiles a visual, interactive HTML dashboard summarizing test execution results.
- * @param {Array} results Array of test details and metrics.
- * @param {Object} durationInfo Object containing overall duration metrics.
- */
 function generateHtmlReport(results, durationInfo) {
   const total = results.length;
   const passed = results.filter(r => r.status === 'Pass').length;
   const failed = total - passed;
-  const skipped = 0; // standard setup
   const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : 0;
   
   const testRows = results.map((test, index) => {
@@ -30,7 +24,7 @@ function generateHtmlReport(results, durationInfo) {
       ? `<div class="error-details-box">
            <strong>Error Message:</strong>
            <pre>${escapeHtml(test.error)}</pre>
-           ${test.logs ? `<strong>Browser Logs:</strong><pre>${escapeHtml(test.logs)}</pre>` : ''}
+           ${test.logs ? `<strong>Device Logs:</strong><pre>${escapeHtml(test.logs)}</pre>` : ''}
            ${screenshotHtml}
          </div>`
       : '';
@@ -61,17 +55,17 @@ function generateHtmlReport(results, durationInfo) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Test Automation Dashboard</title>
+  <title>Mobile Test Automation Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #0f172a;
-      --bg-card: #1e293b;
-      --border: #334155;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --bg-dark: #090d16;
+      --bg-card: #111827;
+      --border: #1f2937;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
       --green: #10b981;
-      --red: #f43f5e;
+      --red: #ef4444;
       --blue: #3b82f6;
     }
     
@@ -101,7 +95,7 @@ function generateHtmlReport(results, durationInfo) {
     .header h1 {
       font-size: 1.75rem;
       font-weight: 700;
-      background: linear-gradient(to right, #10b981, #3b82f6);
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -149,7 +143,7 @@ function generateHtmlReport(results, durationInfo) {
     .stat-card.passed .stat-value { color: var(--green); }
     .stat-card.failed .stat-value { color: var(--red); }
     .stat-card.rate .stat-value {
-      background: linear-gradient(to right, var(--green), #6ee7b7);
+      background: linear-gradient(to right, var(--blue), #a78bfa);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -179,7 +173,7 @@ function generateHtmlReport(results, durationInfo) {
     }
     
     .filter-btn:hover {
-      background-color: #334155;
+      background-color: #374151;
     }
     
     .filter-btn.active {
@@ -218,7 +212,7 @@ function generateHtmlReport(results, durationInfo) {
     }
     
     th {
-      background-color: #0f172a;
+      background-color: #030712;
       color: var(--text-muted);
       font-weight: 600;
       padding: 1rem 1.5rem;
@@ -240,7 +234,7 @@ function generateHtmlReport(results, durationInfo) {
     }
     
     .test-row:hover {
-      background-color: #334155;
+      background-color: #1f2937;
     }
     
     .description-cell {
@@ -252,7 +246,7 @@ function generateHtmlReport(results, durationInfo) {
     .type-badge {
       font-size: 0.75rem;
       color: var(--text-muted);
-      background-color: #0f172a;
+      background-color: #030712;
       padding: 0.1rem 0.4rem;
       border-radius: 4px;
       align-self: flex-start;
@@ -274,7 +268,7 @@ function generateHtmlReport(results, durationInfo) {
     }
     
     .status-fail {
-      background-color: rgba(244, 63, 94, 0.15);
+      background-color: rgba(239, 68, 68, 0.15);
       color: var(--red);
     }
     
@@ -284,13 +278,13 @@ function generateHtmlReport(results, durationInfo) {
     }
     
     .details-row {
-      background-color: #0b0f19;
+      background-color: #030712;
     }
     
     .error-details-box {
       padding: 1.5rem;
       border-left: 4px solid var(--red);
-      background-color: rgba(244, 63, 94, 0.02);
+      background-color: rgba(239, 68, 68, 0.02);
       border-radius: 0 8px 8px 0;
       margin: 0.5rem 0;
     }
@@ -303,13 +297,13 @@ function generateHtmlReport(results, durationInfo) {
     }
     
     pre {
-      background-color: #0f172a;
+      background-color: #090d16;
       border: 1px solid var(--border);
       padding: 1rem;
       border-radius: 8px;
       font-family: 'Courier New', Courier, monospace;
       font-size: 0.875rem;
-      color: #e2e8f0;
+      color: #e5e7eb;
       white-space: pre-wrap;
       word-break: break-all;
       margin-bottom: 1.25rem;
@@ -333,8 +327,8 @@ function generateHtmlReport(results, durationInfo) {
 <body>
   <div class="header">
     <div>
-      <h1>Yoga App Test Automation Dashboard</h1>
-      <p style="color: var(--text-muted); margin-top: 0.25rem;">Automated Selenium E2E Diagnostics</p>
+      <h1>Yoga App Mobile Test Automation Dashboard</h1>
+      <p style="color: var(--text-muted); margin-top: 0.25rem;">Automated Appium E2E Diagnostics</p>
     </div>
     <div class="meta-info">
       <div>Execution Date: <strong>${new Date().toLocaleString()}</strong></div>
@@ -397,7 +391,6 @@ function generateHtmlReport(results, durationInfo) {
     }
 
     function filterTests(status, button) {
-      // Toggle button active class
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
       button.classList.add('active');
 
@@ -439,20 +432,15 @@ function generateHtmlReport(results, durationInfo) {
 </html>
   `;
 
-  // Ensure report directories exist
-  const reportPath = path.join(__dirname, '..', config.htmlReportPath);
-  const rootReportPath = path.join(__dirname, '..', '..', 'reports', 'Test_Summary.html');
-  
-  [reportPath, rootReportPath].forEach(p => {
-    const dir = path.dirname(p);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
+  // Make sure output folder exists
+  const reportPath = path.resolve(__dirname, '..', config.htmlReportPath);
+  const dir = path.dirname(reportPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
   fs.writeFileSync(reportPath, htmlContent, 'utf8');
-  fs.writeFileSync(rootReportPath, htmlContent, 'utf8');
-  console.log(`[HtmlReporter] Interactive HTML dashboards successfully generated at:\n  - ${reportPath}\n  - ${rootReportPath}`);
+  console.log(`[HtmlReporter] Interactive HTML dashboard generated at: ${reportPath}`);
 }
 
 function escapeHtml(text) {

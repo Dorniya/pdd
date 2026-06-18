@@ -142,6 +142,258 @@ function calculateCalorieBurn(weightKg, durationMinutes, intensity = 'medium') {
   return Math.round(calories);
 }
 
+/**
+ * Validates an email address format.
+ * @param {string} email
+ * @returns {boolean}
+ */
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email.trim());
+}
+
+/**
+ * Validates a password meets minimum strength requirements.
+ * @param {string} password
+ * @returns {{ valid: boolean, reasons: string[] }}
+ */
+function validatePassword(password) {
+  const reasons = [];
+  if (!password || typeof password !== 'string') return { valid: false, reasons: ['Password is required'] };
+  if (password.length < 8) reasons.push('Too short (min 8 chars)');
+  if (!/[A-Z]/.test(password)) reasons.push('Missing uppercase letter');
+  if (!/[0-9]/.test(password)) reasons.push('Missing digit');
+  return { valid: reasons.length === 0, reasons };
+}
+
+/**
+ * Calculates age in full years from a date of birth string.
+ * @param {string} dob ISO date string
+ * @returns {number}
+ */
+function calculateAge(dob) {
+  if (!dob) return 0;
+  const birth = new Date(dob);
+  if (isNaN(birth)) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age < 0 ? 0 : age;
+}
+
+/**
+ * Validates blood pressure string format "systolic/diastolic".
+ * @param {string} bp
+ * @returns {boolean}
+ */
+function isValidBloodPressure(bp) {
+  if (!bp || typeof bp !== 'string') return false;
+  const match = bp.match(/^(\d{2,3})\/(\d{2,3})$/);
+  if (!match) return false;
+  const sys = parseInt(match[1]);
+  const dia = parseInt(match[2]);
+  return sys >= 60 && sys <= 260 && dia >= 30 && dia <= 160;
+}
+
+/**
+ * Parses a blood pressure string into systolic and diastolic values.
+ * @param {string} bp e.g. "120/80"
+ * @returns {{ systolic: number, diastolic: number } | null}
+ */
+function parseBloodPressure(bp) {
+  if (!isValidBloodPressure(bp)) return null;
+  const parts = bp.split('/');
+  return { systolic: parseInt(parts[0]), diastolic: parseInt(parts[1]) };
+}
+
+/**
+ * Clamps a value between a min and max.
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+function clamp(value, min, max) {
+  if (value === null || value === undefined || isNaN(value)) return min;
+  return Math.min(Math.max(value, min), max);
+}
+
+/**
+ * Normalizes an accuracy value to the range [0, 100].
+ * @param {number} value
+ * @returns {number}
+ */
+function normalizeAccuracy(value) {
+  return clamp(Math.round(value), 0, 100);
+}
+
+/**
+ * Calculates progress percentage from current and total values.
+ * @param {number} current
+ * @param {number} total
+ * @returns {number} Rounded percentage (0-100)
+ */
+function calculateProgressPercentage(current, total) {
+  if (!total || total <= 0) return 0;
+  if (current <= 0) return 0;
+  return Math.min(100, Math.round((current / total) * 100));
+}
+
+/**
+ * Determines a yoga skill level label based on total sessions completed.
+ * @param {number} sessions
+ * @returns {string}
+ */
+function getYogaLevel(sessions) {
+  if (!sessions || sessions < 0) return 'Beginner';
+  if (sessions < 5) return 'Beginner';
+  if (sessions < 20) return 'Intermediate';
+  if (sessions < 50) return 'Advanced';
+  return 'Expert';
+}
+
+/**
+ * Formats a calorie count for display.
+ * @param {number} calories
+ * @returns {string}
+ */
+function formatCalories(calories) {
+  if (calories === null || calories === undefined || isNaN(calories) || calories < 0) return '0 kcal';
+  if (calories >= 1000) {
+    return `${(calories / 1000).toFixed(1)}k kcal`;
+  }
+  return `${Math.round(calories)} kcal`;
+}
+
+/**
+ * Validates a resting heart rate value (normal range 30-220 bpm).
+ * @param {number} hr
+ * @returns {boolean}
+ */
+function isValidHeartRate(hr) {
+  if (hr === null || hr === undefined || isNaN(hr)) return false;
+  return hr >= 30 && hr <= 220;
+}
+
+/**
+ * Calculates Basal Metabolic Rate using Mifflin-St Jeor equation.
+ * @param {number} weightKg
+ * @param {number} heightCm
+ * @param {number} age
+ * @param {string} gender 'male' or 'female'
+ * @returns {number} BMR in kcal/day (rounded)
+ */
+function calculateBMR(weightKg, heightCm, age, gender) {
+  if (!weightKg || !heightCm || !age || weightKg <= 0 || heightCm <= 0 || age <= 0) return 0;
+  let bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+  if (gender === 'male') {
+    bmr += 5;
+  } else if (gender === 'female') {
+    bmr -= 161;
+  } else {
+    return 0; // Unknown gender
+  }
+  return Math.round(bmr);
+}
+
+/**
+ * Calculates the number of days between two ISO date strings.
+ * @param {string} date1
+ * @param {string} date2
+ * @returns {number} Absolute number of days between dates
+ */
+function daysBetween(date1, date2) {
+  if (!date1 || !date2) return 0;
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  if (isNaN(d1) || isNaN(d2)) return 0;
+  const diffMs = Math.abs(d2 - d1);
+  return Math.round(diffMs / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Generates a unique session ID string (timestamp-based).
+ * @returns {string}
+ */
+function generateSessionId() {
+  return `session_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+/**
+ * Determines if a weight in kg is within a healthy BMI range for the given height.
+ * @param {number} weightKg
+ * @param {number} heightCm
+ * @returns {boolean}
+ */
+function isHealthyWeight(weightKg, heightCm) {
+  const bmi = calculateBMI(weightKg, heightCm);
+  return bmi >= 18.5 && bmi < 25;
+}
+
+/**
+ * Formats a large number as an abbreviated string (e.g. 1200 -> "1.2k").
+ * @param {number} value
+ * @returns {string}
+ */
+function formatLargeNumber(value) {
+  if (value === null || value === undefined || isNaN(value)) return '0';
+  if (value < 0) return '0';
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+  return `${Math.round(value)}`;
+}
+
+/**
+ * Calculates total minutes from an array of session duration objects { durationSeconds }.
+ * @param {Array<{durationSeconds: number}>} sessions
+ * @returns {number}
+ */
+function calculateTotalMinutes(sessions) {
+  if (!sessions || sessions.length === 0) return 0;
+  const totalSeconds = sessions.reduce((sum, s) => sum + (s.durationSeconds || 0), 0);
+  return Math.round(totalSeconds / 60);
+}
+
+/**
+ * Returns the most recent date from an array of ISO date strings.
+ * @param {string[]} dates
+ * @returns {string|null}
+ */
+function getMostRecentDate(dates) {
+  if (!dates || dates.length === 0) return null;
+  const valid = dates.map(d => new Date(d)).filter(d => !isNaN(d));
+  if (valid.length === 0) return null;
+  const latest = new Date(Math.max(...valid));
+  return latest.toISOString();
+}
+
+/**
+ * Converts blood sugar from mg/dL to mmol/L.
+ * @param {number} mgdl
+ * @returns {number}
+ */
+function mgdlToMmol(mgdl) {
+  if (!mgdl || mgdl <= 0) return 0;
+  return parseFloat((mgdl / 18.0182).toFixed(1));
+}
+
+/**
+ * Classifies blood sugar level.
+ * @param {number} mgdl
+ * @returns {string}
+ */
+function classifyBloodSugar(mgdl) {
+  if (!mgdl || mgdl <= 0) return 'Unknown';
+  if (mgdl < 70) return 'Low';
+  if (mgdl <= 99) return 'Normal';
+  if (mgdl <= 125) return 'Pre-diabetic';
+  return 'High';
+}
+
 module.exports = {
   calculateStreak,
   calculateAverageAccuracy,
@@ -149,5 +401,25 @@ module.exports = {
   calculateBMI,
   classifyBMI,
   classifyBP,
-  calculateCalorieBurn
+  calculateCalorieBurn,
+  isValidEmail,
+  validatePassword,
+  calculateAge,
+  isValidBloodPressure,
+  parseBloodPressure,
+  clamp,
+  normalizeAccuracy,
+  calculateProgressPercentage,
+  getYogaLevel,
+  formatCalories,
+  isValidHeartRate,
+  calculateBMR,
+  daysBetween,
+  generateSessionId,
+  isHealthyWeight,
+  formatLargeNumber,
+  calculateTotalMinutes,
+  getMostRecentDate,
+  mgdlToMmol,
+  classifyBloodSugar
 };
