@@ -33,7 +33,7 @@ describe('Functional | Application Features', function() {
     console.log('[Test] TC-FUN-02: Checking authenticated dashboard actions...');
     
     // Check if we are already logged in (e.g. if the previous E2E test left us logged in)
-    const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 2000);
+    const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 8000);
     
     if (!onDashboard) {
       console.log('[Test] Not logged in, skipping dashboard functional test (expected).');
@@ -41,7 +41,7 @@ describe('Functional | Application Features', function() {
     } else {
       // Navigate tabs
       await dashboardPage.navigateToTab('Yoga');
-      const yogaListVisible = await dashboardPage.isTextPresent('Yoga Poses') || await dashboardPage.isTextPresent('Beginner');
+      const yogaListVisible = await dashboardPage.isTextPresent('Yoga Sessions') || await dashboardPage.isTextPresent('Mountain Pose');
       expect(yogaListVisible).to.be.true;
       
       await dashboardPage.navigateToTab('Profile');

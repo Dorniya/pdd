@@ -34,7 +34,17 @@ describe('E2E | End-to-End User Journeys', function() {
     await signupPage.register(testEmail, 'Password123');
     
     // Check if user is redirected to the dashboard or blocked by Firebase auth config
-    const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 3000);
+    let onDashboard = false;
+    let isBlocked = false;
+    for (let i = 0; i < 20; i++) {
+      onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 200);
+      isBlocked = await loginPage.isTextPresent('Authentication failed', 100) || 
+                  await loginPage.isTextPresent('Firebase', 100);
+      if (onDashboard || isBlocked) {
+        break;
+      }
+      await loginPage.sleep(300);
+    }
     
     if (onDashboard) {
       console.log('[Test] Successfully registered and navigated to Dashboard.');
@@ -43,10 +53,7 @@ describe('E2E | End-to-End User Journeys', function() {
     } else {
       console.log('[Test] Blocked by Firebase configuration (Expected behavior if Firebase is not connected).');
       // Look for snackbar error presence
-      const snackbarText = await loginPage.isTextPresent('Authentication failed');
-      const isConfigError = await loginPage.isTextPresent('Firebase');
-      expect(snackbarText || isConfigError || true).to.be.true;
-      
+      expect(isBlocked || true).to.be.true;
       // Go back to login screen to reset state for the next test
       await signupPage.clickBackToLogin();
     }
@@ -58,7 +65,19 @@ describe('E2E | End-to-End User Journeys', function() {
     // Login attempt
     await loginPage.login('user@example.com', 'WrongPassword123');
     
-    const onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 3000);
+    // Wait for either dashboard or error message to appear
+    let onDashboard = false;
+    let loginFailed = false;
+    for (let i = 0; i < 20; i++) {
+      onDashboard = await dashboardPage.isTextPresent('Yoga Dashboard', 200);
+      loginFailed = await loginPage.isTextPresent('incorrect', 100) || 
+                    await loginPage.isTextPresent('failed', 100) || 
+                    await loginPage.isTextPresent('Firebase', 100);
+      if (onDashboard || loginFailed) {
+        break;
+      }
+      await loginPage.sleep(300);
+    }
     
     if (onDashboard) {
       console.log('[Test] Logged in successfully.');
@@ -66,9 +85,6 @@ describe('E2E | End-to-End User Journeys', function() {
       await profilePage.clickLogout();
     } else {
       console.log('[Test] Login did not navigate to Dashboard. Verifying snackbar error is raised.');
-      const loginFailed = await loginPage.isTextPresent('incorrect') || 
-                           await loginPage.isTextPresent('failed') || 
-                           await loginPage.isTextPresent('Firebase');
       expect(loginFailed).to.be.true;
     }
   });

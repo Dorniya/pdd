@@ -1,4 +1,4 @@
-const { until } = require('selenium-webdriver');
+const { until, Key } = require('selenium-webdriver');
 
 class BasePage {
   /**
@@ -29,34 +29,49 @@ class BasePage {
           function search(root) {
             if (!root) return null;
             
-            // Check current node
-            if (root.getAttribute) {
-              const currentLabel = root.getAttribute('aria-label');
-              const currentRole = root.getAttribute('role');
-              
-              let match = false;
-              if (label && rl) {
-                match = (currentLabel === label || (currentLabel && currentLabel.includes(label))) && currentRole === rl;
-              } else if (label) {
-                match = currentLabel && (currentLabel === label || currentLabel.includes(label));
-              } else if (rl) {
-                match = currentRole === rl;
-              }
-              
-              if (match) return root;
-            }
-            
-            // Search shadow root
+            // Search shadow root first
             if (root.shadowRoot) {
               const found = search(root.shadowRoot);
               if (found) return found;
             }
             
-            // Search children
+            // Search children first
             const children = root.children || [];
             for (let i = 0; i < children.length; i++) {
               const found = search(children[i]);
               if (found) return found;
+            }
+            
+            // Check current node last
+            if (root.getAttribute) {
+              const currentLabel = root.getAttribute('aria-label');
+              const currentRole = root.getAttribute('role');
+              const currentText = root.textContent ? root.textContent.trim() : '';
+              
+              let labelMatch = false;
+              if (label) {
+                labelMatch = (currentLabel === label || (currentLabel && currentLabel.includes(label))) ||
+                             (currentText === label || currentText.includes(label));
+              } else {
+                labelMatch = true;
+              }
+              
+              let roleMatch = false;
+              if (rl) {
+                if (rl === 'text-field') {
+                  roleMatch = currentRole === 'text-field' || currentRole === 'textbox' || root.tagName === 'INPUT';
+                } else if (rl === 'button') {
+                  roleMatch = currentRole === 'button' || root.tagName === 'BUTTON';
+                } else {
+                  roleMatch = currentRole === rl;
+                }
+              } else {
+                roleMatch = true;
+              }
+              
+              if (labelMatch && roleMatch) {
+                return root;
+              }
             }
             
             return null;
@@ -85,13 +100,25 @@ class BasePage {
    */
   async type(ariaLabel, text) {
     const el = await this.findSemanticElement(ariaLabel, 'text-field');
-    // Clear first if needed (sending backspaces or using clear)
     try {
-      await el.clear();
+      // Focus and select all text so we can clear it with a single Backspace keypress
+      await this.driver.executeScript(
+        'arguments[0].focus(); ' +
+        'arguments[0].setSelectionRange(0, arguments[0].value.length);',
+        el
+      );
+      await el.sendKeys(Key.BACK_SPACE);
     } catch (e) {
-      // Clear might fail for custom semantic inputs, ignore and write
+      console.warn(`[BasePage] Custom select-and-delete clear failed: ${e.message}. Falling back to standard clear.`);
+      try {
+        await el.clear();
+      } catch (err) {
+        // Ignore fallback clear errors
+      }
     }
-    await el.sendKeys(text);
+    if (text !== '') {
+      await el.sendKeys(text);
+    }
   }
 
   /**
